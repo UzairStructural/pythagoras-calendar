@@ -104,11 +104,6 @@ for i, day in enumerate(days):
 dates_august = [datetime.date(2029, 7, 29) + datetime.timedelta(days=i) for i in range(42)]  # Sunday start
 grid_rows = [dates_august[i:i + 7] for i in range(0, len(dates_august), 7)]
 
-# Events
-meetings = [datetime.date(2029, 7, 30), datetime.date(2029, 8, 6), datetime.date(2029, 8, 13),
-            datetime.date(2029, 8, 20), datetime.date(2029, 8, 27)]
-cancellations = [datetime.date(2029, 8, 3), datetime.date(2029, 8, 31)]
-
 # Render rows
 for week in grid_rows:
     cols = st.columns(7)
@@ -116,18 +111,6 @@ for week in grid_rows:
         with cols[idx]:
             style = "selected-day" if day == st.session_state.selected_date else ""
             st.markdown(f"<div class='{style}'><b>{day.day}</b></div>", unsafe_allow_html=True)
-            if day in meetings:
-                st.markdown("""
-                <div class='meeting'>
-                    Weekly Scheduling Meeting
-                </div>
-                """, unsafe_allow_html=True)
-            if day in cancellations:
-                st.markdown("""
-                <div class='event'>
-                    Canceled Treatment
-                </div>
-                """, unsafe_allow_html=True)
 
 # === FOOTER ===
 st.markdown("---")
