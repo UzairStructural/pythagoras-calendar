@@ -59,7 +59,7 @@ if "selected_date" not in st.session_state:
     st.session_state.selected_date = datetime.date(2029, 8, 9)
 
 # === TOOLBAR ===
-st.markdown("## 📅 Month View – August 2029")
+st.markdown(f"## 📅 {'Month' if st.session_state.get('view_mode', 'Month') == 'Month' else 'Work Week'} View – {st.session_state.selected_date.strftime('%B %Y')}")
 toolbar_col1, toolbar_col2, toolbar_col3 = st.columns([1, 5, 1])
 with toolbar_col1:
     st.button("⬅️")
@@ -67,9 +67,9 @@ with toolbar_col1:
         st.session_state.selected_date = datetime.date.today()
     st.button("➡️")
 with toolbar_col2:
-    st.markdown("<h4 style='text-align: center;'>August 2029</h4>", unsafe_allow_html=True)
+    st.markdown(f"<h4 style='text-align: center;'>{st.session_state.selected_date.strftime('%B %Y')}</h4>", unsafe_allow_html=True)
 with toolbar_col3:
-    st.selectbox("View Mode", ["Work Week", "Month"], index=1, key="view_mode")
+    st.selectbox("View Mode", ["Work Week", "Month"], index=1 if st.session_state.get("view_mode") == "Month" else 0, key="view_mode")
 
 # === LEFT SIDEBAR ===
 with st.sidebar:
@@ -84,24 +84,45 @@ with st.sidebar:
 # === MAIN CALENDAR VIEW ===
 st.markdown("---")
 
-# === MONTHLY VIEW ===
-days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-day_headers = st.columns(7)
-for i, day in enumerate(days):
-    with day_headers[i]:
-        st.markdown(f"<div class='day-header'>{day}</div>", unsafe_allow_html=True)
+if st.session_state.view_mode == "Month":
+    # === MONTHLY VIEW ===
+    days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    day_headers = st.columns(7)
+    for i, day in enumerate(days):
+        with day_headers[i]:
+            st.markdown(f"<div class='day-header'>{day}</div>", unsafe_allow_html=True)
 
-dates_august = [datetime.date(2029, 7, 29) + datetime.timedelta(days=i) for i in range(42)]
-grid_rows = [dates_august[i:i + 7] for i in range(0, len(dates_august), 7)]
+    dates_august = [datetime.date(2029, 7, 29) + datetime.timedelta(days=i) for i in range(42)]
+    grid_rows = [dates_august[i:i + 7] for i in range(0, len(dates_august), 7)]
 
-for week in grid_rows:
-    cols = st.columns(7)
-    for idx, day in enumerate(week):
-        with cols[idx]:
-            selected_style = "selected-day" if day == st.session_state.selected_date else "calendar-cell"
-            st.markdown(f"""
-                <div class='{selected_style}'>
-                    <div class='date-label'>{day.day}</div>
+    for week in grid_rows:
+        cols = st.columns(7)
+        for idx, day in enumerate(week):
+            with cols[idx]:
+                selected_style = "selected-day" if day == st.session_state.selected_date else "calendar-cell"
+                st.markdown(f"""
+                    <div class='{selected_style}'>
+                        <div class='date-label'>{day.day}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+else:
+    # === WEEKLY VIEW ===
+    start_of_week = st.session_state.selected_date - datetime.timedelta(days=st.session_state.selected_date.weekday())
+    days = [(start_of_week + datetime.timedelta(days=i)) for i in range(7)]
+
+    day_headers = st.columns(8)
+    day_headers[0].markdown("**Time**")
+    for i, day in enumerate(days):
+        day_headers[i+1].markdown(f"<div class='day-header'>{day.strftime('%A %d')}</div>", unsafe_allow_html=True)
+
+    time_range = [datetime.time(h, 0) for h in range(8, 21)]  # 8AM to 8PM
+
+    for t in time_range:
+        row = st.columns(8)
+        row[0].markdown(f"{t.strftime('%-I %p')}")
+        for i in range(1, 8):
+            row[i].markdown("""
+                <div class='hour-cell'>
                 </div>
             """, unsafe_allow_html=True)
 
