@@ -1,4 +1,4 @@
-# === Updated app.py for Outlook-style Calendar with Weekly & Monthly Enhancements ===
+# === Updated app.py for Outlook-style Calendar with Weekly & Monthly Enhancements and Interactive Task Popup ===
 
 import streamlit as st
 import datetime
@@ -22,6 +22,7 @@ st.markdown("""
         height: 60px;
         border-bottom: 1px solid #ddd;
         padding: 5px;
+        cursor: pointer;
     }
     .day-header {
         font-weight: bold;
@@ -57,6 +58,12 @@ st.markdown("""
 # === STATE DEFAULTS ===
 if "selected_date" not in st.session_state:
     st.session_state.selected_date = datetime.date(2029, 8, 9)
+if "task_popup" not in st.session_state:
+    st.session_state.task_popup = False
+if "popup_datetime" not in st.session_state:
+    st.session_state.popup_datetime = None
+if "tasks" not in st.session_state:
+    st.session_state.tasks = []
 
 # === TOOLBAR ===
 view_mode = st.session_state.get("view_mode", "Month")
@@ -100,11 +107,6 @@ with toolbar_col3:
 with st.sidebar:
     st.subheader("🗓️ Calendar Navigation")
     st.date_input("Jump to Date", value=st.session_state.selected_date)
-    st.write("#### 📁 My Calendars")
-    st.checkbox("✅ Calendar - UAhmed@falcon…", value=True)
-    st.checkbox("United States Holidays")
-    st.checkbox("Birthdays")
-    st.checkbox("Calendar - Falcon Contacts")
 
 # === MAIN CALENDAR VIEW ===
 st.markdown("---")
@@ -142,16 +144,34 @@ else:
     for i, day in enumerate(days):
         day_headers[i+1].markdown(f"<div class='day-header'>{day.strftime('%A %d')}</div>", unsafe_allow_html=True)
 
-    time_range = [datetime.time(h, 0) for h in range(8, 21)]  # 8AM to 8PM
+    time_range = [datetime.time(h, 0) for h in range(24)]  # Full day: 12AM–12AM
 
     for t in time_range:
         row = st.columns(8)
         row[0].markdown(f"{t.strftime('%-I %p')}")
         for i in range(1, 8):
-            row[i].markdown("""
-                <div class='hour-cell'>
-                </div>
-            """, unsafe_allow_html=True)
+            block_id = f"{days[i-1]} {t}"
+            if st.button(" ", key=block_id):
+                st.session_state.task_popup = True
+                st.session_state.popup_datetime = datetime.datetime.combine(days[i-1], t)
+            row[i].markdown("<div class='hour-cell'></div>", unsafe_allow_html=True)
+
+# === TASK CREATION POPUP ===
+if st.session_state.task_popup and st.session_state.popup_datetime:
+    st.markdown("---")
+    st.subheader("📝 New Task")
+    start_time = st.time_input("Start Time", value=st.session_state.popup_datetime.time(), key="start_time")
+    end_time = st.time_input("End Time", value=(datetime.datetime.combine(datetime.date.today(), st.session_state.popup_datetime.time()) + datetime.timedelta(hours=1)).time(), key="end_time")
+    notes = st.text_area("Notes", key="notes")
+    if st.button("💾 Save Task"):
+        st.session_state.tasks.append({
+            "datetime": st.session_state.popup_datetime,
+            "start": start_time,
+            "end": end_time,
+            "notes": notes
+        })
+        st.session_state.task_popup = False
+        st.success("Task saved!")
 
 # === FOOTER ===
 st.markdown("---")
