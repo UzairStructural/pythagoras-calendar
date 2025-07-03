@@ -1,14 +1,14 @@
 import streamlit as st
 import datetime
 import uuid
-import openai
+from openai import OpenAI  # ✅ updated
 import os
 
 st.set_page_config(page_title="Pythagoras Calendar", layout="wide")
 st.title("📅 Pythagoras Task Calendar")
 
 # Load OpenAI API key from secrets
-openai.api_key = st.secrets["OPENAI_API_KEY"]
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])  # ✅ updated
 
 def ask_pythagoras(tasks):
     prompt = f"""
@@ -24,14 +24,14 @@ Tasks:
 
 Respond clearly and as a proactive assistant.
 """
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(  # ✅ updated
         model="gpt-4o",
         messages=[
             {"role": "system", "content": "You are a detail-oriented project management assistant."},
             {"role": "user", "content": prompt}
         ]
     )
-    return response.choices[0].message.content
+    return response.choices[0].message.content  # ✅ updated
 
 # Initialize session state for tasks
 if "tasks" not in st.session_state:
@@ -83,18 +83,6 @@ for i, day in enumerate(week_days):
                 st.markdown(f"- 🕒 {t['datetime'].time().strftime('%H:%M')} - {t['name']} ({t['priority']})")
         else:
             st.markdown("`No tasks`")
-# 🔧 GPT Connection Test
-if st.button("🧪 Test GPT Connection"):
-    test_prompt = "Just say: 'Hello Uzair, your GPT API connection is working.'"
-    test_response = openai.ChatCompletion.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": test_prompt}
-        ]
-    )
-    st.success("✅ GPT API Responded:")
-    st.info(test_response.choices[0].message.content)
 
 # Footer
 st.markdown("---")
