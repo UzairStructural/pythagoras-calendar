@@ -7,6 +7,48 @@ from openai import OpenAI
 
 # === SETUP ===
 st.set_page_config(page_title="🧠 Pythagoras Calendar", layout="wide")
+import streamlit as st
+import datetime
+import uuid
+from openai import OpenAI
+import os
+import json
+
+st.set_page_config(page_title="Pythagoras Calendar", layout="wide")
+
+# ⬛ Custom styling from top controls
+if "bg_color" not in st.session_state:
+    st.session_state.bg_color = "#1c1c1e"
+if "hour_height" not in st.session_state:
+    st.session_state.hour_height = 60
+if "time_divisions" not in st.session_state:
+    st.session_state.time_divisions = 10
+if "view_mode" not in st.session_state:
+    st.session_state.view_mode = "Week"
+
+# Top Ribbon Menu
+with st.container():
+    st.markdown("## 📅 Pythagoras Calendar View")
+    col1, col2, col3, col4, col5 = st.columns([1, 1, 2, 2, 2])
+
+    with col1:
+        st.session_state.view_mode = st.selectbox("View", ["Week", "Month"], key="view_mode_toggle")
+
+    with col2:
+        year = st.selectbox("Year", list(range(datetime.datetime.now().year - 5, datetime.datetime.now().year + 6)))
+        month = st.selectbox("Month", list(range(1, 13)), format_func=lambda x: datetime.date(1900, x, 1).strftime('%B'))
+
+    with col3:
+        st.session_state.bg_color = st.color_picker("🎨 Background", st.session_state.bg_color)
+
+    with col4:
+        st.session_state.hour_height = st.slider("🔼 Hour Height (px)", 10, 100, st.session_state.hour_height)
+
+    with col5:
+        st.session_state.time_divisions = st.selectbox("📏 Time Divisions / Hour", [4, 6, 10])
+
+st.markdown("---")
+
 st.markdown("<style>body { background-color: #1c1c1e; color: #e0e0e0; font-family: Inter, sans-serif; }</style>", unsafe_allow_html=True)
 
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
