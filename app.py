@@ -1,9 +1,37 @@
 import streamlit as st
 import datetime
 import uuid
+import openai
+import os
 
 st.set_page_config(page_title="Pythagoras Calendar", layout="wide")
 st.title("📅 Pythagoras Task Calendar")
+
+# Load OpenAI API key from secrets
+openai.api_key = st.secrets["OPENAI_API_KEY"]
+
+def ask_pythagoras(tasks):
+    prompt = f"""
+You are Pythagoras, a project manager AI assistant created by Uzair Ahmed Mohammed.
+Your goal is to review upcoming calendar tasks and identify:
+- Conflicts, overload, or missing follow-ups
+- Which tasks are high-stakes vs low-stakes
+- Suggestions to reschedule or batch tasks
+- Any risk if Uzair misses something
+
+Tasks:
+{tasks}
+
+Respond clearly and as a proactive assistant.
+"""
+    response = openai.ChatCompletion.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "You are a detail-oriented project management assistant."},
+            {"role": "user", "content": prompt}
+        ]
+    )
+    return response.choices[0].message.content
 
 # Initialize session state for tasks
 if "tasks" not in st.session_state:
@@ -33,6 +61,17 @@ st.subheader("📆 Tasks This Week")
 today = datetime.date.today()
 week_days = [today + datetime.timedelta(days=i) for i in range(7)]
 
+# 🔄 Format all tasks for GPT
+task_summary = ""
+for t in st.session_state.tasks:
+    task_summary += f"- {t['datetime'].strftime('%Y-%m-%d %H:%M')} | {t['name']} ({t['priority']}): {t['notes']}\n"
+
+if st.button("🔍 Ask Pythagoras to review my schedule"):
+    ai_response = ask_pythagoras(task_summary)
+    st.subheader("🤖 Pythagoras says:")
+    st.info(ai_response)
+
+# Now render the calendar columns
 cols = st.columns(7)
 for i, day in enumerate(week_days):
     with cols[i]:
