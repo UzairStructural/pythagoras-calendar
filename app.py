@@ -83,6 +83,18 @@ for i, day in enumerate(week_days):
                 st.markdown(f"- 🕒 {t['datetime'].time().strftime('%H:%M')} - {t['name']} ({t['priority']})")
         else:
             st.markdown("`No tasks`")
+# 🔧 GPT Connection Test
+if st.button("🧪 Test GPT Connection"):
+    test_prompt = "Just say: 'Hello Uzair, your GPT API connection is working.'"
+    test_response = openai.ChatCompletion.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": test_prompt}
+        ]
+    )
+    st.success("✅ GPT API Responded:")
+    st.info(test_response.choices[0].message.content)
 
 # Footer
 st.markdown("---")
