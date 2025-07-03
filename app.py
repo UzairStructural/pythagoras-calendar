@@ -1,5 +1,4 @@
-# === Updated app.py for Outlook-style Calendar ===
-# Mirrors the visual behavior and layout of Outlook (light mode, month view, sidebars, toolbar, etc.)
+# === Updated app.py for Outlook-style Calendar with Weekly & Monthly Enhancements ===
 
 import streamlit as st
 import datetime
@@ -15,25 +14,42 @@ st.set_page_config(page_title="📆 Outlook-Style Calendar", layout="wide")
 st.markdown("""
     <style>
     body {
-        background-color: #ffffff;
+        background-color: #f9f9f9;
         color: #333;
-        font-family: 'Segoe UI', sans-serif;
+        font-family: 'Segoe UI', Arial, sans-serif;
     }
     .hour-cell {
-        height: 40px;
-        border-bottom: 1px solid #ccc;
-        padding-left: 5px;
+        height: 60px;
+        border-bottom: 1px solid #ddd;
+        padding: 5px;
     }
     .day-header {
         font-weight: bold;
         background-color: #f5f5f5;
         text-align: center;
-        padding: 10px 0;
+        padding: 8px 0;
         border-bottom: 2px solid #ccc;
+        border-right: 1px solid #ddd;
     }
     .selected-day {
-        background-color: #0078d7;
-        color: white;
+        border: 2px solid #0078d7;
+        border-radius: 4px;
+        padding: 4px;
+        background-color: #e6f0fb;
+    }
+    .calendar-cell {
+        height: 120px;
+        border: 1px solid #ddd;
+        padding: 4px;
+        font-size: 13px;
+        position: relative;
+    }
+    .date-label {
+        position: absolute;
+        top: 4px;
+        right: 8px;
+        font-size: 11px;
+        color: #999;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -43,24 +59,17 @@ if "selected_date" not in st.session_state:
     st.session_state.selected_date = datetime.date(2029, 8, 9)
 
 # === TOOLBAR ===
-st.markdown("## 🧭 Outlook Calendar Toolbar")
-t1, t2, t3, t4, t5 = st.columns(5)
-with t1:
-    st.button("📝 New Appointment")
-    st.button("📅 New Meeting")
-with t2:
-    st.button("🧘 Add Focus Time")
-    st.button("➕ New Items")
-with t3:
-    st.button("📞 Meet Now")
-    st.button("📹 Teams Meeting")
-with t4:
+st.markdown("## 📅 Month View – August 2029")
+toolbar_col1, toolbar_col2, toolbar_col3 = st.columns([1, 5, 1])
+with toolbar_col1:
+    st.button("⬅️")
     if st.button("Today"):
         st.session_state.selected_date = datetime.date.today()
-    st.button("Next 7 Days")
-with t5:
-    st.selectbox("View", ["Day", "Week", "Work Week", "Month", "Schedule View"], index=3)
-    st.selectbox("Manage", ["Add Calendar", "Share Calendar", "New Group", "Browse Groups"])
+    st.button("➡️")
+with toolbar_col2:
+    st.markdown("<h4 style='text-align: center;'>August 2029</h4>", unsafe_allow_html=True)
+with toolbar_col3:
+    st.selectbox("View Mode", ["Work Week", "Month"], index=1, key="view_mode")
 
 # === LEFT SIDEBAR ===
 with st.sidebar:
@@ -74,26 +83,27 @@ with st.sidebar:
 
 # === MAIN CALENDAR VIEW ===
 st.markdown("---")
-st.markdown("### 📆 Month View – August 2029")
 
-# Create 7 columns (Sunday to Saturday)
+# === MONTHLY VIEW ===
 days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-day_columns = st.columns(7)
+day_headers = st.columns(7)
 for i, day in enumerate(days):
-    with day_columns[i]:
+    with day_headers[i]:
         st.markdown(f"<div class='day-header'>{day}</div>", unsafe_allow_html=True)
 
-# Create 6 weeks of blank rows to simulate Outlook's grid
-dates_august = [datetime.date(2029, 7, 29) + datetime.timedelta(days=i) for i in range(42)]  # Sunday start
+dates_august = [datetime.date(2029, 7, 29) + datetime.timedelta(days=i) for i in range(42)]
 grid_rows = [dates_august[i:i + 7] for i in range(0, len(dates_august), 7)]
 
-# Render rows
 for week in grid_rows:
     cols = st.columns(7)
     for idx, day in enumerate(week):
         with cols[idx]:
-            style = "selected-day" if day == st.session_state.selected_date else ""
-            st.markdown(f"<div class='{style}'><b>{day.day}</b></div>", unsafe_allow_html=True)
+            selected_style = "selected-day" if day == st.session_state.selected_date else "calendar-cell"
+            st.markdown(f"""
+                <div class='{selected_style}'>
+                    <div class='date-label'>{day.day}</div>
+                </div>
+            """, unsafe_allow_html=True)
 
 # === FOOTER ===
 st.markdown("---")
