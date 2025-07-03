@@ -59,17 +59,42 @@ if "selected_date" not in st.session_state:
     st.session_state.selected_date = datetime.date(2029, 8, 9)
 
 # === TOOLBAR ===
-st.markdown(f"## 📅 {'Month' if st.session_state.get('view_mode', 'Month') == 'Month' else 'Work Week'} View – {st.session_state.selected_date.strftime('%B %Y')}")
+view_mode = st.session_state.get("view_mode", "Month")
+selected_date = st.session_state.selected_date
+
+if view_mode == "Month":
+    title_display = selected_date.strftime("%B %Y")
+else:
+    start_of_week = selected_date - datetime.timedelta(days=selected_date.weekday())
+    end_of_week = start_of_week + datetime.timedelta(days=6)
+    title_display = f"{start_of_week.strftime('%m/%d/%y')} – {end_of_week.strftime('%m/%d/%y')}"
+
+st.markdown(f"## 📅 {view_mode} View – {title_display}")
 toolbar_col1, toolbar_col2, toolbar_col3 = st.columns([1, 5, 1])
 with toolbar_col1:
-    st.button("⬅️")
-    if st.button("Today"):
+    if st.button("⬆️"):
+        if view_mode == "Month":
+            new_month = selected_date.month - 1 or 12
+            new_year = selected_date.year - 1 if new_month == 12 else selected_date.year
+            new_year = max(2024, new_year)
+            st.session_state.selected_date = selected_date.replace(year=new_year, month=new_month, day=1)
+        else:
+            new_date = selected_date - datetime.timedelta(weeks=1)
+            st.session_state.selected_date = max(datetime.date(2024, 1, 1), new_date)
+    if st.button(title_display):
         st.session_state.selected_date = datetime.date.today()
-    st.button("➡️")
-with toolbar_col2:
-    st.markdown(f"<h4 style='text-align: center;'>{st.session_state.selected_date.strftime('%B %Y')}</h4>", unsafe_allow_html=True)
+    if st.button("⬇️"):
+        if view_mode == "Month":
+            new_month = selected_date.month + 1 if selected_date.month < 12 else 1
+            new_year = selected_date.year + 1 if new_month == 1 else selected_date.year
+            new_year = min(2040, new_year)
+            st.session_state.selected_date = selected_date.replace(year=new_year, month=new_month, day=1)
+        else:
+            new_date = selected_date + datetime.timedelta(weeks=1)
+            st.session_state.selected_date = min(datetime.date(2040, 12, 31), new_date)
+
 with toolbar_col3:
-    st.selectbox("View Mode", ["Work Week", "Month"], index=1 if st.session_state.get("view_mode") == "Month" else 0, key="view_mode")
+    st.selectbox("View Mode", ["Work Week", "Month"], index=1 if view_mode == "Month" else 0, key="view_mode")
 
 # === LEFT SIDEBAR ===
 with st.sidebar:
@@ -92,14 +117,16 @@ if st.session_state.view_mode == "Month":
         with day_headers[i]:
             st.markdown(f"<div class='day-header'>{day}</div>", unsafe_allow_html=True)
 
-    dates_august = [datetime.date(2029, 7, 29) + datetime.timedelta(days=i) for i in range(42)]
-    grid_rows = [dates_august[i:i + 7] for i in range(0, len(dates_august), 7)]
+    first_day = selected_date.replace(day=1)
+    start_day = first_day - datetime.timedelta(days=first_day.weekday() + 1 if first_day.weekday() < 6 else 0)
+    dates_grid = [start_day + datetime.timedelta(days=i) for i in range(42)]
+    grid_rows = [dates_grid[i:i + 7] for i in range(0, len(dates_grid), 7)]
 
     for week in grid_rows:
         cols = st.columns(7)
         for idx, day in enumerate(week):
             with cols[idx]:
-                selected_style = "selected-day" if day == st.session_state.selected_date else "calendar-cell"
+                selected_style = "selected-day" if day == selected_date else "calendar-cell"
                 st.markdown(f"""
                     <div class='{selected_style}'>
                         <div class='date-label'>{day.day}</div>
@@ -107,7 +134,7 @@ if st.session_state.view_mode == "Month":
                 """, unsafe_allow_html=True)
 else:
     # === WEEKLY VIEW ===
-    start_of_week = st.session_state.selected_date - datetime.timedelta(days=st.session_state.selected_date.weekday())
+    start_of_week = selected_date - datetime.timedelta(days=selected_date.weekday())
     days = [(start_of_week + datetime.timedelta(days=i)) for i in range(7)]
 
     day_headers = st.columns(8)
