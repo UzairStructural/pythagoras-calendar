@@ -31,23 +31,6 @@ st.markdown("""
         padding: 10px 0;
         border-bottom: 2px solid #ccc;
     }
-    .event {
-        border: 1px dashed red;
-        background-color: #ffe6e6;
-        padding: 5px;
-        border-radius: 4px;
-        margin: 5px;
-        color: #b30000;
-        font-size: 12px;
-    }
-    .meeting {
-        border: 1px dashed #cc0000;
-        background-color: #ffe0cc;
-        padding: 5px;
-        border-radius: 4px;
-        margin: 5px;
-        font-size: 12px;
-    }
     .selected-day {
         background-color: #0078d7;
         color: white;
