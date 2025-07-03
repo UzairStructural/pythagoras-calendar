@@ -10,7 +10,7 @@ from openai import OpenAI
 # === SETUP ===
 st.set_page_config(page_title="📆 Outlook-Style Calendar", layout="wide")
 
-# === STYLING ===
+# === STYLING & JS FOR GRID + COORDINATE TRACKER ===
 st.markdown("""
     <style>
     body {
@@ -83,12 +83,32 @@ st.markdown("""
         font-size: 10px;
         z-index: 1;
     }
+    #cursor-coords {
+        position: fixed;
+        top: 10px;
+        right: 20px;
+        background-color: rgba(0,0,0,0.05);
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 12px;
+        color: #000;
+        z-index: 10000;
+        font-family: Arial, sans-serif;
+    }
     </style>
     <div class="grid-overlay"></div>
     <div class="axis-labels">
         <div style="position:absolute; bottom:0; left:0">0,0</div>
-        <!-- Add more X/Y labels here as needed -->
     </div>
+    <div id="cursor-coords">X: 0, Y: 0</div>
+    <script>
+        document.addEventListener('mousemove', function(e) {
+            const x = e.clientX;
+            const y = window.innerHeight - e.clientY;
+            document.getElementById('cursor-coords').innerText = `X: ${x}, Y: ${y}`;
+        });
+    </script>
 """, unsafe_allow_html=True)
 
 # === STATE DEFAULTS ===
