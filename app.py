@@ -119,17 +119,16 @@ for week in grid_rows:
             if day in meetings:
                 st.markdown("""
                 <div class='meeting'>
-                    9:00 AM<br>Weekly Scheduling<br>Microsoft Teams<br>Kendall Eberhardt
+                    Weekly Scheduling Meeting
                 </div>
                 """, unsafe_allow_html=True)
             if day in cancellations:
                 st.markdown("""
                 <div class='event'>
-                    Canceled:<br>N.Garon – Treatment
+                    Canceled Treatment
                 </div>
                 """, unsafe_allow_html=True)
 
 # === FOOTER ===
 st.markdown("---")
 st.caption("🖥️ Outlook-Style Calendar inspired by Uzair's Pythagoras AI Project")
-
