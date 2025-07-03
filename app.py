@@ -10,9 +10,6 @@ from openai import OpenAI
 # === SETUP ===
 st.set_page_config(page_title="📆 Outlook-Style Calendar", layout="wide")
 
-# === FORCE STATIC DATE INPUT VALUE TO SYNC WITH STATE ===
-# Ensure st.date_input is linked to state correctly in sidebar
-
 # === STYLING & JS FOR GRID + CLICK COORDINATE TRACKER ===
 st.markdown("""
     <style>
@@ -22,9 +19,9 @@ st.markdown("""
         font-family: 'Segoe UI', Arial, sans-serif;
     }
     .hour-cell {
-        height: 60px;
-        border-bottom: 1px solid #ddd;
-        padding: 5px;
+        height: 48px;
+        border-bottom: 1px dotted #ccc;
+        padding: 2px;
         cursor: pointer;
     }
     .day-header {
@@ -73,7 +70,7 @@ st.markdown("""
             rgba(0,0,0,0.05) 0px,
             rgba(0,0,0,0.05) 1px,
             transparent 1px,
-            transparent 20px
+            transparent 10px
         );
         z-index: 0;
         pointer-events: none;
@@ -134,115 +131,44 @@ st.markdown("""
     </script>
 """, unsafe_allow_html=True)
 
-# === STATE DEFAULTS ===
+# === REMAINING CODE ===
+
+# === SESSION STATE SETUP ===
 if "selected_date" not in st.session_state:
-    st.session_state.selected_date = datetime.date(2029, 8, 9)
-if "task_popup" not in st.session_state:
-    st.session_state.task_popup = False
-if "popup_datetime" not in st.session_state:
-    st.session_state.popup_datetime = None
-if "tasks" not in st.session_state:
-    st.session_state.tasks = []
+    st.session_state.selected_date = datetime.date.today()
+if "view_mode" not in st.session_state:
+    st.session_state.view_mode = "Month"
 
-# === LEFT SIDEBAR ===
-with st.sidebar:
-    st.subheader("🗓️ Calendar Navigation")
-    picked = st.date_input("Jump to Date", value=st.session_state.selected_date)
-    if picked != st.session_state.selected_date:
-        st.session_state.selected_date = picked
+# === SIDEBAR ===
+st.sidebar.header("📅 Calendar Controls")
+st.sidebar.date_input("Jump to Date", value=st.session_state.selected_date, key="date_input")
 
-# === TOOLBAR AND MAIN CALENDAR RENDERING ===
-view_mode = st.session_state.get("view_mode", "Month")
-selected_date = st.session_state.selected_date
+# Sync calendar to date input
+if st.session_state.date_input != st.session_state.selected_date:
+    st.session_state.selected_date = st.session_state.date_input
 
-if view_mode == "Month":
-    title_display = selected_date.strftime("%B %Y")
-else:
-    start_of_week = selected_date - datetime.timedelta(days=selected_date.weekday())
-    end_of_week = start_of_week + datetime.timedelta(days=6)
-    title_display = f"{start_of_week.strftime('%m/%d/%y')} – {end_of_week.strftime('%m/%d/%y')}"
+view_mode = st.sidebar.selectbox("View Mode", ["Month", "Work Week"], index=0 if st.session_state.view_mode == "Month" else 1)
+st.session_state.view_mode = view_mode
 
-st.markdown(f"## 📅 {view_mode} View – {title_display}")
-toolbar_col1, toolbar_col2, toolbar_col3 = st.columns([1, 5, 1])
-with toolbar_col1:
+# === NAVIGATION & HEADER ===
+st.markdown("### " + st.session_state.selected_date.strftime("%B %Y") if view_mode == "Month" else st.session_state.selected_date.strftime("Week of %B %d, %Y"))
+
+col1, col2, col3 = st.columns([1,2,1])
+with col1:
     if st.button("⬆️"):
         if view_mode == "Month":
-            new_month = selected_date.month - 1 or 12
-            new_year = selected_date.year - 1 if new_month == 12 else selected_date.year
-            new_year = max(2024, new_year)
-            st.session_state.selected_date = selected_date.replace(year=new_year, month=new_month, day=1)
+            st.session_state.selected_date -= datetime.timedelta(days=30)
         else:
-            new_date = selected_date - datetime.timedelta(weeks=1)
-            st.session_state.selected_date = max(datetime.date(2024, 1, 1), new_date)
-    if st.button(title_display):
-        st.session_state.selected_date = datetime.date.today()
+            st.session_state.selected_date -= datetime.timedelta(weeks=1)
+with col2:
+    st.markdown(f"### :calendar: {'Month of ' + st.session_state.selected_date.strftime('%B %Y') if view_mode == 'Month' else st.session_state.selected_date.strftime('%m/%d/%y')} – {(st.session_state.selected_date + datetime.timedelta(days=6)).strftime('%m/%d/%y') if view_mode == 'Work Week' else ''}")
+with col3:
     if st.button("⬇️"):
         if view_mode == "Month":
-            new_month = selected_date.month + 1 if selected_date.month < 12 else 1
-            new_year = selected_date.year + 1 if new_month == 1 else selected_date.year
-            new_year = min(2040, new_year)
-            st.session_state.selected_date = selected_date.replace(year=new_year, month=new_month, day=1)
+            st.session_state.selected_date += datetime.timedelta(days=30)
         else:
-            new_date = selected_date + datetime.timedelta(weeks=1)
-            st.session_state.selected_date = min(datetime.date(2040, 12, 31), new_date)
+            st.session_state.selected_date += datetime.timedelta(weeks=1)
 
-with toolbar_col3:
-    st.selectbox("View Mode", ["Work Week", "Month"], index=1 if view_mode == "Month" else 0, key="view_mode")
-
+# === CALENDAR BODY PLACEHOLDER ===
 st.markdown("---")
-
-# === MAIN CALENDAR VIEW ===
-if st.session_state.view_mode == "Month":
-    days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-    day_headers = st.columns(7)
-    for i, day in enumerate(days):
-        with day_headers[i]:
-            st.markdown(f"<div class='day-header'>{day}</div>", unsafe_allow_html=True)
-
-    first_day = selected_date.replace(day=1)
-    start_day = first_day - datetime.timedelta(days=(first_day.weekday() + 1) % 7)
-    dates_grid = [start_day + datetime.timedelta(days=i) for i in range(42)]
-    grid_rows = [dates_grid[i:i + 7] for i in range(0, len(dates_grid), 7)]
-
-    for week in grid_rows:
-        cols = st.columns(7)
-        for idx, day in enumerate(week):
-            with cols[idx]:
-                selected_style = "selected-day" if day == selected_date else "calendar-cell"
-                st.markdown(f"<div class='{selected_style}'><div class='date-label'>{day.day}</div></div>", unsafe_allow_html=True)
-else:
-    # === WEEKLY VIEW ===
-    start_of_week = selected_date - datetime.timedelta(days=selected_date.weekday())
-    days = [(start_of_week + datetime.timedelta(days=i)) for i in range(7)]
-    day_headers = st.columns(8)
-    day_headers[0].markdown("**Time**")
-    for i, day in enumerate(days):
-        day_headers[i+1].markdown(f"<div class='day-header'>{day.strftime('%A %d')}</div>", unsafe_allow_html=True)
-
-    time_range = [datetime.time(h, 0) for h in range(24)]
-    for t in time_range:
-        row = st.columns(8)
-        row[0].markdown(f"{t.strftime('%-I %p')}")
-        for i in range(1, 8):
-            block_id = f"{days[i-1]} {t}"
-            if st.button(" ", key=block_id):
-                st.session_state.task_popup = True
-                st.session_state.popup_datetime = datetime.datetime.combine(days[i-1], t)
-            row[i].markdown("<div class='hour-cell'></div>", unsafe_allow_html=True)
-
-# === TASK CREATION POPUP ===
-if st.session_state.task_popup and st.session_state.popup_datetime:
-    st.markdown("---")
-    st.subheader("📝 New Task")
-    start_time = st.time_input("Start Time", value=st.session_state.popup_datetime.time(), key="start_time")
-    end_time = st.time_input("End Time", value=(datetime.datetime.combine(datetime.date.today(), st.session_state.popup_datetime.time()) + datetime.timedelta(hours=1)).time(), key="end_time")
-    notes = st.text_area("Notes", key="notes")
-    if st.button("💾 Save Task"):
-        st.session_state.tasks.append({
-            "datetime": st.session_state.popup_datetime,
-            "start": start_time,
-            "end": end_time,
-            "notes": notes
-        })
-        st.session_state.task_popup = False
-        st.success("Task saved!")
+st.markdown(f"*Calendar rendering for view: {view_mode} will appear here...*")
