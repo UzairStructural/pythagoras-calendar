@@ -132,6 +132,36 @@ hour_range = [datetime.time(h, 0) for h in range(8, 21)]  # 8AM to 8PM
 
 # === SEARCH BAR ===
 search = st.text_input("🔍 Search events...", "")
+# === TASK EDIT POPUP PANEL ===
+if "selected_task_id" in st.session_state and st.session_state["selected_task_id"]:
+    task_to_edit = next((t for t in st.session_state.tasks if t["id"] == st.session_state["selected_task_id"]), None)
+    if task_to_edit:
+        st.markdown("### ✏️ Edit Task")
+        new_name = st.text_input("Task Name", task_to_edit["name"])
+        new_date = st.date_input("Due Date", task_to_edit["datetime"].date())
+        new_time = st.time_input("Due Time", task_to_edit["datetime"].time())
+        new_priority = st.selectbox("Priority", ["High", "Medium", "Low"], index=["High", "Medium", "Low"].index(task_to_edit["priority"]))
+        new_notes = st.text_area("Notes", task_to_edit["notes"])
+
+        col_save, col_delete = st.columns(2)
+        with col_save:
+            if st.button("💾 Save"):
+                task_to_edit["name"] = new_name
+                task_to_edit["datetime"] = datetime.datetime.combine(new_date, new_time)
+                task_to_edit["priority"] = new_priority
+                task_to_edit["notes"] = new_notes
+                save_tasks(st.session_state.tasks)
+                st.session_state["selected_task_id"] = None
+                st.success("✅ Task updated!")
+                st.experimental_rerun()
+        with col_delete:
+            if st.button("🗑️ Delete"):
+                st.session_state.tasks = [t for t in st.session_state.tasks if t["id"] != task_to_edit["id"]]
+                save_tasks(st.session_state.tasks)
+                st.session_state["selected_task_id"] = None
+                st.success("🗑️ Task deleted.")
+                st.experimental_rerun()
+
 
 # === CALENDAR GRID ===
 st.markdown("---")
@@ -162,7 +192,9 @@ for i, day in enumerate(days):
                 {t['datetime'].strftime('%I:%M %p')} - {t['priority']}
             </div>
             """
-            st.markdown(block, unsafe_allow_html=True)
+           if st.button(f"🟩 {t['name']} ({t['priority']}) - {t['datetime'].strftime('%I:%M %p')}", key=t["id"]):
+    st.session_state["selected_task_id"] = t["id"]
+
 
 # === ASK PYTHAGORAS REVIEW ===
 task_summary = ""
