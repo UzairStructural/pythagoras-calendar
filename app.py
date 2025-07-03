@@ -52,7 +52,43 @@ st.markdown("""
         font-size: 11px;
         color: #999;
     }
+    .grid-overlay {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: repeating-linear-gradient(
+            to right,
+            rgba(0,0,0,0.05) 0px,
+            rgba(0,0,0,0.05) 1px,
+            transparent 1px,
+            transparent 20px
+        ),
+        repeating-linear-gradient(
+            to top,
+            rgba(0,0,0,0.05) 0px,
+            rgba(0,0,0,0.05) 1px,
+            transparent 1px,
+            transparent 20px
+        );
+        z-index: 0;
+        pointer-events: none;
+    }
+    .axis-labels {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        color: rgba(0,0,0,0.2);
+        font-size: 10px;
+        z-index: 1;
+    }
     </style>
+    <div class="grid-overlay"></div>
+    <div class="axis-labels">
+        <div style="position:absolute; bottom:0; left:0">0,0</div>
+        <!-- Add more X/Y labels here as needed -->
+    </div>
 """, unsafe_allow_html=True)
 
 # === STATE DEFAULTS ===
