@@ -3,12 +3,27 @@ import datetime
 import uuid
 from openai import OpenAI  # ✅ updated
 import os
+import json
 
 st.set_page_config(page_title="Pythagoras Calendar", layout="wide")
 st.title("📅 Pythagoras Task Calendar")
 
 # Load OpenAI API key from secrets
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])  # ✅ updated
+
+TASKS_FILE = "tasks.json"
+
+# 🔄 Load tasks from file if available
+def load_tasks():
+    if os.path.exists(TASKS_FILE):
+        with open(TASKS_FILE, "r") as f:
+            return json.load(f)
+    return []
+
+# 💾 Save tasks to file
+def save_tasks(tasks):
+    with open(TASKS_FILE, "w") as f:
+        json.dump(tasks, f, default=str)
 
 def ask_pythagoras(tasks):
     prompt = f"""
@@ -36,6 +51,11 @@ Respond clearly and as a proactive assistant.
 # Initialize session state for tasks
 if "tasks" not in st.session_state:
     st.session_state.tasks = []
+    raw_tasks = load_tasks()
+    # Convert datetime strings back to objects
+    for task in raw_tasks:
+        task["datetime"] = datetime.datetime.fromisoformat(task["datetime"])
+    st.session_state.tasks = raw_tasks
 
 # Sidebar for task input
 with st.sidebar:
@@ -47,13 +67,15 @@ with st.sidebar:
     task_notes = st.text_area("Notes")
 
     if st.button("Add Task"):
-        st.session_state.tasks.append({
+        new_task = {
             "id": str(uuid.uuid4()),
             "name": task_name,
             "datetime": datetime.datetime.combine(task_date, task_time),
             "priority": task_priority,
             "notes": task_notes,
-        })
+        }
+        st.session_state.tasks.append(new_task)
+        save_tasks(st.session_state.tasks)
         st.success("✅ Task added!")
 
 # Display calendar
