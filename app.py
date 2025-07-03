@@ -107,18 +107,94 @@ if st.button("🧪 Test GPT Connection"):
     st.info(response.choices[0].message.content)
 
 # Now render the calendar columns
-cols = st.columns(7)
-for i, day in enumerate(week_days):
-    with cols[i]:
-        st.markdown(f"**{day.strftime('%A')}**")
-        st.markdown(f"*{day.strftime('%Y-%m-%d')}*")
-        day_tasks = [t for t in st.session_state.tasks if t["datetime"].date() == day]
-        if day_tasks:
-            for t in sorted(day_tasks, key=lambda x: x["datetime"]):
-                st.markdown(f"- 🕒 {t['datetime'].time().strftime('%H:%M')} - {t['name']} ({t['priority']})")
-        else:
-            st.markdown("`No tasks`")
+# ------------------ New: Calendar View Settings ------------------
 
-# Footer
-st.markdown("---")
-st.caption("🔧 Built for Uzair | Pythagoras AI Project Manager")
+view_mode = st.radio("View Mode", ["Weekly", "Daily"], horizontal=True)
+search_query = st.text_input("🔍 Search tasks")
+priority_filter = st.selectbox("Filter by Priority", ["All", "High", "Medium", "Low"])
+
+filtered_tasks = [
+    t for t in st.session_state.tasks
+    if (search_query.lower() in t["name"].lower() or search_query.lower() in t["notes"].lower())
+    and (priority_filter == "All" or t["priority"] == priority_filter)
+]
+
+hours_range = list(range(8, 22))  # 8 AM to 10 PM
+
+# Priority color map
+priority_color = {
+    "High": "#ff4d4d",     # red
+    "Medium": "#FFD700",   # yellow
+    "Low": "#90ee90"       # green
+}
+
+# ------------------ Selected Task Editor ------------------
+if "edit_task_id" in st.session_state:
+    edit_task = next((t for t in st.session_state.tasks if t["id"] == st.session_state["edit_task_id"]), None)
+    if edit_task:
+        with st.expander("✏️ Edit Task", expanded=True):
+            new_name = st.text_input("Task Name", edit_task["name"])
+            new_date = st.date_input("Due Date", edit_task["datetime"].date())
+            new_time = st.time_input("Due Time", edit_task["datetime"].time())
+            new_priority = st.selectbox("Priority", ["High", "Medium", "Low"], index=["High", "Medium", "Low"].index(edit_task["priority"]))
+            new_notes = st.text_area("Notes", edit_task["notes"])
+            col1, col2 = st.columns(2)
+            if col1.button("✅ Save Changes"):
+                edit_task["name"] = new_name
+                edit_task["datetime"] = datetime.datetime.combine(new_date, new_time)
+                edit_task["priority"] = new_priority
+                edit_task["notes"] = new_notes
+                save_tasks(st.session_state.tasks)
+                st.success("Task updated!")
+                del st.session_state["edit_task_id"]
+            if col2.button("🗑️ Delete Task"):
+                st.session_state.tasks = [t for t in st.session_state.tasks if t["id"] != edit_task["id"]]
+                save_tasks(st.session_state.tasks)
+                st.warning("Task deleted.")
+                del st.session_state["edit_task_id"]
+
+# ------------------ New: Calendar Grid ------------------
+
+if view_mode == "Weekly":
+    cols = st.columns(7)
+    for i, day in enumerate(week_days):
+        with cols[i]:
+            st.markdown(f"### {day.strftime('%a')}")
+            st.markdown(f"**{day.strftime('%Y-%m-%d')}**")
+            for hour in hours_range:
+                time_label = f"{hour:02d}:00"
+                st.markdown(f"<div style='font-size:10px; color:gray'>{time_label}</div>", unsafe_allow_html=True)
+                block_tasks = [t for t in filtered_tasks if t["datetime"].date() == day and t["datetime"].hour == hour]
+                for t in block_tasks:
+                    color = priority_color[t["priority"]]
+                    button_key = f"edit-{t['id']}"
+                    if st.button(f"🕒 {t['datetime'].strftime('%H:%M')} - {t['name']}", key=button_key):
+                        st.session_state["edit_task_id"] = t["id"]
+                    st.markdown(
+                        f"<div style='background-color:{color}; padding:4px; border-radius:6px; font-size:11px'>{t['priority']} | {t['notes']}</div>",
+                        unsafe_allow_html=True
+                    )
+
+else:  # Daily View
+    day = today
+    st.markdown(f"## 📆 {day.strftime('%A, %Y-%m-%d')}")
+    for hour in hours_range:
+        time_label = f"{hour:02d}:00"
+        st.markdown(f"<div style='font-size:10px; color:gray'>{time_label}</div>", unsafe_allow_html=True)
+        block_tasks = [t for t in filtered_tasks if t["datetime"].date() == day and t["datetime"].hour == hour]
+        for t in block_tasks:
+            color = priority_color[t["priority"]]
+            button_key = f"edit-{t['id']}"
+            if st.button(f"🕒 {t['datetime'].strftime('%H:%M')} - {t['name']}", key=button_key):
+                st.session_state["edit_task_id"] = t["id"]
+            st.markdown(
+                f"<div style='background-color:{color}; padding:4px; border-radius:6px; font-size:11px'>{t['priority']} | {t['notes']}</div>",
+                unsafe_allow_html=True
+            )
+
+# ------------------ New: Color Legend ------------------
+with st.sidebar:
+    st.markdown("### 🔵 Priority Colors")
+    st.markdown("- 🔴 High")
+    st.markdown("- 🟡 Medium")
+    st.markdown("- 🟢 Low")
