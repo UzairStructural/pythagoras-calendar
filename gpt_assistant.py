@@ -102,10 +102,13 @@ def render_chat_pane():
                     st.session_state.chat_history.append({"user": user_input, "bot": "Thinking..."})
                     with st.spinner("Assistant thinking..."):
                         try:
+                            events = load_all_events()
+                            formatted_events = format_events(events)
+
                             response = client.chat.completions.create(
                                 model="gpt-4",
                                 messages=[
-                                    {"role": "system", "content": "You are a helpful project assistant."},
+                                    {"role": "system", "content": "You are a helpful project assistant. User's calendar is:\n" + formatted_events},
                                     {"role": "user", "content": user_input}
                                 ]
                             )
