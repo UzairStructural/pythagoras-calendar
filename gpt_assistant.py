@@ -31,8 +31,14 @@ def format_events(events):
 def summarize_calendar(events):
     text_block = format_events(events)
     messages = [
-        {"role": "system", "content": "You are a helpful calendar assistant that reviews daily and weekly tasks to find potential issues, overlaps, and give planning suggestions."},
-        {"role": "user", "content": f"Here are the calendar events:\n{text_block}\n\nPlease summarize them and provide any suggestions."}
+        {
+            "role": "system",
+            "content": "You are a helpful calendar assistant that reviews daily and weekly tasks to find potential issues, overlaps, and give planning suggestions."
+        },
+        {
+            "role": "user",
+            "content": f"Here are the calendar events:\n{text_block}\n\nPlease summarize them and provide any suggestions."
+        }
     ]
 
     response = client.chat.completions.create(
@@ -42,6 +48,7 @@ def summarize_calendar(events):
     )
 
     return response.choices[0].message.content
+
 
 # === Save GPT Suggestions to Supabase ===
 def save_gpt_suggestion(day, hour, start, end, notes):
