@@ -137,6 +137,8 @@ if "selected_date" not in st.session_state:
     st.session_state.selected_date = datetime.date.today()
 if "view_mode" not in st.session_state:
     st.session_state.view_mode = "Month"
+if "events" not in st.session_state:
+    st.session_state.events = {}
 
 # === SIDEBAR ===
 st.sidebar.header("📅 Calendar Controls")
