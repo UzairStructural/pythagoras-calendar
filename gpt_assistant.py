@@ -1,4 +1,4 @@
-# gpt_assistant.py — GPT-powered Calendar Assistant (Refactored)
+# gpt_assistant.py — GPT-powered Calendar Assistant (Refactored) with Chat UI
 
 import streamlit as st
 from supabase import create_client, Client
@@ -96,3 +96,41 @@ def generate_gpt_suggestions(events):
 
     except Exception as e:
         st.error(f"Failed to parse or insert suggestions: {e}")
+
+# === Sliding Chat Pane ===
+def render_chat_pane():
+    toggle = st.session_state.get("show_chat", False)
+
+    col1, col2 = st.columns([10, 1])
+    with col2:
+        if st.button("💬", key="chat_toggle"):
+            st.session_state.show_chat = not toggle
+
+    if st.session_state.get("show_chat", False):
+        with st.sidebar.expander("💬 Chat Assistant", expanded=True):
+            if "chat_history" not in st.session_state:
+                st.session_state.chat_history = []
+
+            for chat in st.session_state.chat_history:
+                st.markdown(f"**You:** {chat['user']}")
+                st.markdown(f"**Assistant:** {chat['bot']}")
+                st.markdown("---")
+
+            user_input = st.text_input("Message", key="chat_input")
+            if st.button("Send", key="send_button"):
+                if user_input.strip():
+                    st.session_state.chat_history.append({"user": user_input, "bot": "Thinking..."})
+                    with st.spinner("Assistant thinking..."):
+                        try:
+                            response = client.chat.completions.create(
+                                model="gpt-4",
+                                messages=[
+                                    {"role": "system", "content": "You are a helpful project assistant."},
+                                    {"role": "user", "content": user_input}
+                                ]
+                            )
+                            reply = response.choices[0].message.content
+                            st.session_state.chat_history[-1]["bot"] = reply
+                        except Exception as e:
+                            st.session_state.chat_history[-1]["bot"] = f"Error: {e}"
+                    st.rerun()
