@@ -1,4 +1,4 @@
-# gpt_assistant.py — GPT-powered Calendar Assistant (Refactored) with Chat UI
+# gpt_assistant.py — GPT-powered Calendar Assistant (Refactored) with Sliding Chat UI
 
 import streamlit as st
 from supabase import create_client, Client
@@ -29,25 +29,6 @@ def format_events(events):
         line = f"{event['day']} at {event['start']}–{event['end']}: {event['notes']}"
         lines.append(line)
     return "\n".join(lines)
-
-# === Ask GPT to Summarize or Provide Suggestions ===
-def summarize_calendar(events):
-    text_block = format_events(events)
-    messages = [
-        {"role": "system", "content": "You are a helpful calendar assistant that reviews daily and weekly tasks to find potential issues, overlaps, and give planning suggestions."},
-        {"role": "user", "content": f"Here are the calendar events:\n{text_block}\n\nPlease summarize them and provide any suggestions."}
-    ]
-
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=messages,
-            temperature=0.4
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        st.error(f"GPT summary failed: {e}")
-        return ""
 
 # === Save GPT Suggestions to Events Table ===
 def save_gpt_suggestion(day, hour, start, end, notes):
@@ -97,40 +78,46 @@ def generate_gpt_suggestions(events):
     except Exception as e:
         st.error(f"Failed to parse or insert suggestions: {e}")
 
-# === Sliding Chat Pane ===
+# === Sliding Chat Pane (Right Side) ===
 def render_chat_pane():
-    toggle = st.session_state.get("show_chat", False)
+    if "show_chat" not in st.session_state:
+        st.session_state.show_chat = False
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
 
-    col1, col2 = st.columns([10, 1])
-    with col2:
-        if st.button("💬", key="chat_toggle"):
-            st.session_state.show_chat = not toggle
+    with st.container():
+        chat_toggle = st.button("💬 Chat", key="toggle_chat")
+        if chat_toggle:
+            st.session_state.show_chat = not st.session_state.show_chat
 
-    if st.session_state.get("show_chat", False):
-        with st.sidebar.expander("💬 Chat Assistant", expanded=True):
-            if "chat_history" not in st.session_state:
-                st.session_state.chat_history = []
+    if st.session_state.show_chat:
+        with st.container(border=True):
+            st.markdown("### 💬 Assistant Chat")
+            chat_container = st.container()
+            with chat_container:
+                for entry in st.session_state.chat_history:
+                    st.markdown(f"**You:** {entry['user']}")
+                    st.markdown(f"**Assistant:** {entry['bot']}")
+                    st.markdown("---")
 
-            for chat in st.session_state.chat_history:
-                st.markdown(f"**You:** {chat['user']}")
-                st.markdown(f"**Assistant:** {chat['bot']}")
-                st.markdown("---")
-
-            user_input = st.text_input("Message", key="chat_input")
-            if st.button("Send", key="send_button"):
-                if user_input.strip():
-                    st.session_state.chat_history.append({"user": user_input, "bot": "Thinking..."})
-                    with st.spinner("Assistant thinking..."):
-                        try:
-                            response = client.chat.completions.create(
-                                model="gpt-4",
-                                messages=[
-                                    {"role": "system", "content": "You are a helpful project assistant."},
-                                    {"role": "user", "content": user_input}
-                                ]
-                            )
-                            reply = response.choices[0].message.content
-                            st.session_state.chat_history[-1]["bot"] = reply
-                        except Exception as e:
-                            st.session_state.chat_history[-1]["bot"] = f"Error: {e}"
-                    st.rerun()
+                col1, col2 = st.columns([5, 1])
+                with col1:
+                    user_input = st.text_input("Message", key="chat_input")
+                with col2:
+                    if st.button("Send", key="send_msg"):
+                        if user_input.strip():
+                            st.session_state.chat_history.append({"user": user_input, "bot": "Thinking..."})
+                            with st.spinner("Assistant thinking..."):
+                                try:
+                                    response = client.chat.completions.create(
+                                        model="gpt-4",
+                                        messages=[
+                                            {"role": "system", "content": "You are a helpful project assistant."},
+                                            {"role": "user", "content": user_input}
+                                        ]
+                                    )
+                                    reply = response.choices[0].message.content
+                                    st.session_state.chat_history[-1]["bot"] = reply
+                                except Exception as e:
+                                    st.session_state.chat_history[-1]["bot"] = f"Error: {e}"
+                            st.rerun()
