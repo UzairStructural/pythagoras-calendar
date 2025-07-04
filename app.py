@@ -6,7 +6,7 @@ from taskinteraction import render_cell, show_gpt_suggestions
 from gpt_assistant import summarize_calendar, generate_gpt_suggestions, load_all_events
 
 # === SETUP ===
-st.set_page_config(page_title="📆 Outlook-Style Calendar", layout="wide")
+st.set_page_config(page_title="🗖️ Outlook-Style Calendar", layout="wide")
 
 # === SESSION STATE SETUP ===
 if "selected_date" not in st.session_state:
@@ -17,7 +17,7 @@ if "events" not in st.session_state:
     st.session_state.events = {}
 
 # === SIDEBAR ===
-st.sidebar.header("📅 Calendar Controls")
+st.sidebar.header("🗕️ Calendar Controls")
 st.sidebar.date_input("Jump to Date", value=st.session_state.selected_date, key="date_input")
 
 if st.session_state.date_input != st.session_state.selected_date:
@@ -27,7 +27,7 @@ view_mode = st.sidebar.selectbox("View Mode", ["Month", "Work Week"], index=0 if
 st.session_state.view_mode = view_mode
 
 # === HEADER ===
-st.markdown("### " + st.session_state.selected_date.strftime("%B %Y") if view_mode == "Month" else st.session_state.selected_date.strftime("Week of %B %d, %Y"))
+st.markdown("### " + (st.session_state.selected_date.strftime("%B %Y") if view_mode == "Month" else st.session_state.selected_date.strftime("Week of %B %d, %Y")))
 
 col1, col2, col3 = st.columns([1,2,1])
 with col1:
@@ -54,7 +54,8 @@ if view_mode == "Month":
             grid.append(week)
             week = []
         week.append(curr)
-    grid.append(week)
+    if week:
+        grid.append(week)
     for row in grid:
         cols = st.columns(7)
         for i, day in enumerate(row):
@@ -84,10 +85,10 @@ else:
 
 # === GPT ASSISTANT ===
 st.write("---")
-if st.button("🤖 Run GPT Assistant"):
+if st.button("🧐 Run GPT Assistant"):
     with st.spinner("Thinking with GPT..."):
         events = load_all_events()
-        st.session_state.events = {event['key']: event for event in events}
+        st.session_state.events = {event['key']: event for event in events if 'key' in event}
         summary = summarize_calendar(events)
         generate_gpt_suggestions(events)
     st.subheader("📋 Summary")
