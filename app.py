@@ -6,7 +6,7 @@ from taskinteraction import render_cell, show_gpt_suggestions
 from gpt_assistant import summarize_calendar, generate_gpt_suggestions, load_all_events
 
 # === SETUP ===
-st.set_page_config(page_title="🗖️ Outlook-Style Calendar", layout="wide")
+st.set_page_config(page_title="📆 Outlook-Style Calendar", layout="wide")
 
 # === SESSION STATE SETUP ===
 if "selected_date" not in st.session_state:
