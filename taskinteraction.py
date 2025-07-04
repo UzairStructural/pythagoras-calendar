@@ -1,5 +1,5 @@
 # taskinteraction.py — Task Interaction UI and GPT Suggestion Renderer
-
+import uuid
 import streamlit as st
 from supabase import create_client, Client
 import datetime
