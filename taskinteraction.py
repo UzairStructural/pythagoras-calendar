@@ -1,9 +1,10 @@
-# taskinteraction.py (Supabase-enabled)
+# taskinteraction.py (Supabase-enabled, with error handling)
 
 import streamlit as st
 import datetime
 from supabase import create_client, Client
 import uuid
+from postgrest.exceptions import APIError
 
 # --- Supabase Setup ---
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
@@ -16,21 +17,32 @@ def get_event_key(day, hour):
 
 # --- Save task to Supabase ---
 def save_event_to_supabase(day, hour, start, end, notes):
-    key = get_event_key(day, hour)
-    event_data = {
-        "id": str(uuid.uuid4()),
-        "key": key,
-        "day": day.strftime("%Y-%m-%d"),
-        "hour": hour,
-        "start": start,
-        "end": end,
-        "notes": notes
-    }
-    existing = supabase.table("events").select("id").eq("key", key).execute()
-    if existing.data:
-        supabase.table("events").update(event_data).eq("key", key).execute()
-    else:
-        supabase.table("events").insert(event_data).execute()
+    try:
+        key = get_event_key(day, hour)
+
+        if not start or not end:
+            st.warning("Start and End time cannot be empty.")
+            return
+
+        event_data = {
+            "id": str(uuid.uuid4()),
+            "key": key,
+            "day": day.strftime("%Y-%m-%d"),
+            "hour": int(hour),
+            "start": str(start),
+            "end": str(end),
+            "notes": notes or ""
+        }
+
+        existing = supabase.table("events").select("id").eq("key", key).execute()
+        if existing.data:
+            supabase.table("events").update(event_data).eq("key", key).execute()
+        else:
+            supabase.table("events").insert(event_data).execute()
+
+    except APIError as e:
+        st.error(f"Supabase insert failed: {e.message}")
+        st.json(event_data)
 
 # --- Load events from Supabase ---
 def load_events():
