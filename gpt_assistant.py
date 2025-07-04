@@ -6,6 +6,7 @@ from openai import OpenAI
 import os
 import datetime
 import uuid
+import json
 
 # === Setup OpenAI & Supabase ===
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -59,7 +60,7 @@ def generate_gpt_suggestions(events):
     text_block = format_events(events)
     messages = [
         {"role": "system", "content": "You are an assistant that suggests new tasks to improve productivity based on user's calendar."},
-        {"role": "user", "content": f"Here are the calendar events:\n{text_block}\n\nSuggest 2 new useful tasks. Return in JSON array like: [{{'day':'2025-07-03','hour':9,'start':'9 AM','end':'10 AM','notes':'Team sync'}}, ...]"}
+        {"role": "user", "content": f"Here are the calendar events:\n{text_block}\n\nSuggest 2 new useful tasks. Return in JSON array like: [{\"day\":\"2025-07-03\",\"hour\":9,\"start\":\"9 AM\",\"end\":\"10 AM\",\"notes\":\"Team sync\"}, ...]"}
     ]
 
     response = client.chat.completions.create(
@@ -68,7 +69,6 @@ def generate_gpt_suggestions(events):
         temperature=0.4
     )
 
-    import json
     try:
         suggestion_list = json.loads(response.choices[0].message.content)
         for s in suggestion_list:
