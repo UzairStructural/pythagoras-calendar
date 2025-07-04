@@ -1,4 +1,5 @@
 # taskinteraction.py — Task Interaction UI and GPT Suggestion Renderer
+
 import uuid
 import streamlit as st
 from supabase import create_client, Client
@@ -24,7 +25,7 @@ def render_cell(day, hour):
 def save_to_supabase(day, hour, notes):
     try:
         event = {
-           "id": str(uuid.uuid4()),
+            "id": str(uuid.uuid4()),
             "day": str(day),
             "hour": hour,
             "start": f"{hour % 12 or 12} {'AM' if hour < 12 else 'PM'}",
@@ -33,8 +34,8 @@ def save_to_supabase(day, hour, notes):
             "source": "manual"
         }
         result = supabase.table("events").upsert(event).execute()
-        if result.status_code >= 400:
-            st.error(f"Supabase insert failed: {result.data}")
+        if result.data is None:
+            st.error("Supabase insert failed: No response data")
     except Exception as e:
         st.error(f"Failed to save: {e}")
 
