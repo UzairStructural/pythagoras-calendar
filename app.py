@@ -17,7 +17,7 @@ if "events" not in st.session_state:
     st.session_state.events = {}
 
 # === SIDEBAR ===
-st.sidebar.header("🗕️ Calendar Controls")
+st.sidebar.header("🗕 Calendar Controls")
 st.sidebar.date_input("Jump to Date", value=st.session_state.selected_date, key="date_input")
 
 if st.session_state.date_input != st.session_state.selected_date:
