@@ -12,11 +12,21 @@ def render_task_popup(day, hour):
     existing = st.session_state.events.get(key, {})
 
     with st.popover(f"Edit Task: {day.strftime('%A')} {hour}"):
-        start = st.selectbox("Start Time", [f"{h % 12 or 12} {'AM' if h < 12 else 'PM'}" for h in range(24)], index=hour)
-        end = st.selectbox("End Time", [f"{h % 12 or 12} {'AM' if h < 12 else 'PM'}" for h in range(hour+1, 24)], index=0)
-        notes = st.text_area("Notes", value=existing.get("notes", ""))
+        start = st.selectbox(
+            "Start Time",
+            [f"{h % 12 or 12} {'AM' if h < 12 else 'PM'}" for h in range(24)],
+            index=hour,
+            key=f"start_{key}"
+        )
+        end = st.selectbox(
+            "End Time",
+            [f"{h % 12 or 12} {'AM' if h < 12 else 'PM'}" for h in range(hour+1, 24)],
+            index=0,
+            key=f"end_{key}"
+        )
+        notes = st.text_area("Notes", value=existing.get("notes", ""), key=f"notes_{key}")
 
-        if st.button("💾 Save"):
+        if st.button("💾 Save", key=f"save_{key}"):
             st.session_state.events[key] = {
                 "start": start,
                 "end": end,
