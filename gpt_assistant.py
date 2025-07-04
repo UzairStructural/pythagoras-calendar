@@ -31,24 +31,20 @@ def format_events(events):
 def summarize_calendar(events):
     text_block = format_events(events)
     messages = [
-        {
-            "role": "system",
-            "content": "You are a helpful calendar assistant that reviews daily and weekly tasks to find potential issues, overlaps, and give planning suggestions."
-        },
-        {
-            "role": "user",
-            "content": f"Here are the calendar events:\n{text_block}\n\nPlease summarize them and provide any suggestions."
-        }
+        {"role": "system", "content": "You are a helpful calendar assistant that reviews daily and weekly tasks to find potential issues, overlaps, and give planning suggestions."},
+        {"role": "user", "content": f"Here are the calendar events:\n{text_block}\n\nPlease summarize them and provide any suggestions."}
     ]
 
-    response = client.chat.completions.create(
-        model="gpt-4",
-        messages=messages,
-        temperature=0.4
-    )
-
-    return response.choices[0].message.content
-
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=messages,
+            temperature=0.4
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        st.error(f"GPT summary failed: {e}")
+        return ""
 
 # === Save GPT Suggestions to Supabase ===
 def save_gpt_suggestion(day, hour, start, end, notes):
@@ -65,18 +61,19 @@ def save_gpt_suggestion(day, hour, start, end, notes):
 # === Generate Example Suggestions with GPT ===
 def generate_gpt_suggestions(events):
     text_block = format_events(events)
+    prompt_json = '[{"day":"2025-07-03","hour":9,"start":"9 AM","end":"10 AM","notes":"Team sync"}, ...]'
     messages = [
         {"role": "system", "content": "You are an assistant that suggests new tasks to improve productivity based on user's calendar."},
-        {"role": "user", "content": f"Here are the calendar events:\n{text_block}\n\nSuggest 2 new useful tasks. Return in JSON array like: [{\"day\":\"2025-07-03\",\"hour\":9,\"start\":\"9 AM\",\"end\":\"10 AM\",\"notes\":\"Team sync\"}, ...]"}
+        {"role": "user", "content": f"Here are the calendar events:\n{text_block}\n\nSuggest 2 new useful tasks. Return in JSON array like: {prompt_json}"}
     ]
 
-    response = client.chat.completions.create(
-        model="gpt-4",
-        messages=messages,
-        temperature=0.4
-    )
-
     try:
+        response = client.chat.completions.create(
+            model="gpt-4",
+            messages=messages,
+            temperature=0.4
+        )
+
         suggestion_list = json.loads(response.choices[0].message.content)
 
         if not isinstance(suggestion_list, list):
