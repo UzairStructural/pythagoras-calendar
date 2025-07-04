@@ -96,20 +96,4 @@ if st.button("🤖 Analyze Calendar with GPT"):
 st.markdown("---")
 st.subheader("🤖 GPT Suggested Tasks")
 show_gpt_suggestions()
-# === GPT Communication Test ===
-if st.button("📡 Test GPT API Communication"):
-    try:
-        client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are a friendly assistant."},
-                {"role": "user", "content": "Say a short funny line to show you're working."}
-            ],
-            temperature=0.5
-        )
-        reply = response.choices[0].message.content
-        st.success("✅ GPT responded:")
-        st.markdown(f"**🧠 GPT says:** {reply}")
-    except Exception as e:
-        st.error(f"❌ GPT communication failed: {e}")
+
