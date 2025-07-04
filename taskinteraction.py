@@ -44,6 +44,21 @@ def save_event_to_supabase(day, hour, start, end, notes):
         st.error(f"Supabase insert failed: {e.message}")
         st.json(event_data)
 
+# GPT Assistant Upsert Helper
+
+def save_event_to_supabase_gpt(event_data):
+    try:
+        key = event_data["key"]
+        existing = supabase.table("events").select("id").eq("key", key).execute()
+        if existing.data:
+            supabase.table("events").update(event_data).eq("key", key).execute()
+        else:
+            supabase.table("events").insert(event_data).execute()
+        return True
+    except Exception as e:
+        st.error(f"GPT Supabase Save Failed: {e}")
+        return False
+
 # --- Load events from Supabase ---
 def load_events():
     if "events" not in st.session_state:
