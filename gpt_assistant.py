@@ -53,8 +53,10 @@ def summarize_calendar(events):
 # === Save GPT Suggestions to Events Table ===
 def save_gpt_suggestion(day, hour, start, end, notes):
     try:
+        key = f"{day}_{hour}"
         suggestion = {
             "id": str(uuid.uuid4()),
+            "key": key,
             "day": day,
             "hour": hour,
             "start": start,
