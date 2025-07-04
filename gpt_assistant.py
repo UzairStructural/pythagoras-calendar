@@ -4,6 +4,8 @@ import streamlit as st
 from supabase import create_client, Client
 from openai import OpenAI
 import os
+import datetime
+import uuid
 
 # === Setup OpenAI & Supabase ===
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -40,16 +42,52 @@ def summarize_calendar(events):
 
     return response.choices[0].message.content
 
+# === Save GPT Suggestions to Supabase ===
+def save_gpt_suggestion(day, hour, start, end, notes):
+    suggestion = {
+        "id": str(uuid.uuid4()),
+        "day": day,
+        "hour": hour,
+        "start": start,
+        "end": end,
+        "notes": notes
+    }
+    supabase.table("gpt_suggestions").insert(suggestion).execute()
+
+# === Generate Example Suggestions with GPT ===
+def generate_gpt_suggestions(events):
+    text_block = format_events(events)
+    messages = [
+        {"role": "system", "content": "You are an assistant that suggests new tasks to improve productivity based on user's calendar."},
+        {"role": "user", "content": f"Here are the calendar events:\n{text_block}\n\nSuggest 2 new useful tasks. Return in JSON array like: [{{'day':'2025-07-03','hour':9,'start':'9 AM','end':'10 AM','notes':'Team sync'}}, ...]"}
+    ]
+
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=messages,
+        temperature=0.4
+    )
+
+    import json
+    try:
+        suggestion_list = json.loads(response.choices[0].message.content)
+        for s in suggestion_list:
+            save_gpt_suggestion(s["day"], s["hour"], s["start"], s["end"], s["notes"])
+    except Exception as e:
+        st.error(f"Failed to parse suggestions: {e}")
+
 # === Streamlit UI ===
 st.title("🧠 GPT Calendar Assistant")
 
-if st.button("📥 Analyze My Calendar"):
+if st.button("📅 Analyze My Calendar & Suggest Improvements"):
     events = load_all_events()
     if events:
-        with st.spinner("Thinking..."):
+        with st.spinner("Analyzing with GPT..."):
             summary = summarize_calendar(events)
+            generate_gpt_suggestions(events)
         st.markdown("---")
-        st.subheader("📋 Calendar Summary:")
+        st.subheader("📋 Summary:")
         st.markdown(summary)
+        st.success("Suggestions added below for approval!")
     else:
         st.info("No events found in your Supabase calendar.")
