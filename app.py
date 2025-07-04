@@ -1,12 +1,10 @@
-# app.py — Outlook-style Calendar with GPT Suggestions and Editable Cells
+# app.py — Outlook-style Calendar with Editable Cells Only (No GPT)
 
 import streamlit as st
 import datetime
 import uuid
 import json
-from openai import OpenAI
-from taskinteraction import render_cell, show_gpt_suggestions
-from gpt_assistant import summarize_calendar, generate_gpt_suggestions, load_all_events
+from taskinteraction import render_cell
 
 # === SETUP ===
 st.set_page_config(page_title="📆 Outlook-Style Calendar", layout="wide")
@@ -80,19 +78,3 @@ else:
         for i in range(1, len(row)):
             with row[i]:
                 render_cell(days[i - 1], h)
-
-# === GPT Assistant Button ===
-if st.button("🤖 Analyze Calendar with GPT"):
-    events = load_all_events()
-    if events:
-        with st.spinner("Thinking..."):
-            summary = summarize_calendar(events)
-            generate_gpt_suggestions(events)
-        st.markdown("---")
-        st.subheader("📋 GPT Summary:")
-        st.markdown(summary)
-
-# === GPT Suggestions Display ===
-st.markdown("---")
-st.subheader("🤖 GPT Suggested Tasks")
-show_gpt_suggestions()
