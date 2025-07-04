@@ -6,6 +6,7 @@ import uuid
 import json
 import os
 from openai import OpenAI
+from taskinteraction import render_cell
 
 # === SETUP ===
 st.set_page_config(page_title="📆 Outlook-Style Calendar", layout="wide")
@@ -204,10 +205,10 @@ else:
         with headers[i+1]:
             st.markdown(f"**{day.strftime('%a')} {day.day}**")
 
-    for hour in times:
+    for h, hour in enumerate(times):
         row = st.columns([1] + [1 for _ in days])
         with row[0]:
             st.markdown(f"<div class='hour-cell'>{hour}</div>", unsafe_allow_html=True)
         for i in range(1, len(row)):
             with row[i]:
-                st.markdown(f"<div class='calendar-cell'></div>", unsafe_allow_html=True)
+                render_cell(days[i-1], h)
