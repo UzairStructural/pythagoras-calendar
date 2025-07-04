@@ -64,7 +64,9 @@ def save_gpt_suggestion(day, hour, start, end, notes):
             "notes": notes,
             "source": "gpt"
         }
-        supabase.table("events").insert(suggestion).execute()
+        result = supabase.table("events").insert(suggestion).execute()
+        if result.status_code >= 400:
+            st.error(f"Supabase insert failed: {result.data}")
     except Exception as e:
         st.error(f"Failed to save suggestion: {e}")
 
