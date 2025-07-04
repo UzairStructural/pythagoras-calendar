@@ -91,7 +91,8 @@ if st.button("🤖 Analyze Calendar with GPT"):
         st.markdown("---")
         st.subheader("📋 GPT Summary:")
         st.markdown(summary)
-        st.markdown("---")
-        show_gpt_suggestions()
-    else:
-        st.info("No events to analyze.")
+
+# === Always Show GPT Suggestions if Available ===
+st.markdown("---")
+st.subheader("🤖 GPT Suggested Tasks")
+show_gpt_suggestions()
