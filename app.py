@@ -1,10 +1,11 @@
-# app.py — Outlook-style Calendar with Editable Cells Only (No GPT)
+# app.py — Outlook-style Calendar with Editable Cells + Chat Panel
 
 import streamlit as st
 import datetime
 import uuid
 import json
 from taskinteraction import render_cell
+from gpt_assistant import render_chat_pane
 
 # === SETUP ===
 st.set_page_config(page_title="📆 Outlook-Style Calendar", layout="wide")
@@ -30,7 +31,7 @@ st.session_state.view_mode = view_mode
 
 # === NAVIGATION HEADER ===
 st.markdown("### " + st.session_state.selected_date.strftime("%B %Y") if view_mode == "Month" else st.session_state.selected_date.strftime("Week of %B %d, %Y"))
-col1, col2, col3 = st.columns([1, 2, 1])
+col1, col2, col3, col4 = st.columns([1, 2, 1, 0.5])
 with col1:
     if st.button("⬅️"):
         delta = datetime.timedelta(days=30) if view_mode == "Month" else datetime.timedelta(weeks=1)
@@ -39,6 +40,8 @@ with col3:
     if st.button("➡️"):
         delta = datetime.timedelta(days=30) if view_mode == "Month" else datetime.timedelta(weeks=1)
         st.session_state.selected_date += delta
+with col4:
+    render_chat_pane()
 
 # === CALENDAR BODY ===
 if view_mode == "Month":
