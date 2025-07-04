@@ -60,7 +60,7 @@ view_mode = st.sidebar.selectbox("View Mode", ["Month", "Work Week"], index=1 if
 st.session_state.view_mode = view_mode
 
 # === HEADER NAVIGATION ===
-col1, col2, col3, col4 = st.columns([1, 2, 1, 0.5])
+col1, col2, col3, col4 = st.columns([1, 2, 1, 1])
 with col1:
     if st.button("⬅️"):
         delta = datetime.timedelta(days=30) if view_mode == "Month" else datetime.timedelta(weeks=1)
@@ -73,9 +73,14 @@ with col4:
     if st.button("💬 Chat"):
         st.session_state.chat_open = not st.session_state.chat_open
 
-st.markdown("### " + st.session_state.selected_date.strftime("%B %Y") if view_mode == "Month" else st.session_state.selected_date.strftime("Week of %B %d, %Y"))
+st.markdown("### " + (st.session_state.selected_date.strftime("%B %Y") if view_mode == "Month" else st.session_state.selected_date.strftime("Week of %B %d, %Y")))
 
-main_col, chat_col = st.columns([0.8, 0.2]) if st.session_state.chat_open else st.columns([1, 0])
+# Prevent invalid column layout by ensuring all widths are > 0
+if st.session_state.chat_open:
+    main_col, chat_col = st.columns([0.8, 0.2])
+else:
+    main_col = st.container()
+    chat_col = None
 
 with main_col:
     if view_mode == "Month":
@@ -116,6 +121,6 @@ with main_col:
                 with row[i]:
                     render_cell(days[i - 1], h)
 
-with chat_col:
-    if st.session_state.chat_open:
+if chat_col:
+    with chat_col:
         render_chat_pane()
