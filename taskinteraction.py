@@ -1,65 +1,34 @@
-# taskinteraction.py (Supabase-enabled, with error handling)
+# taskinteraction.py
 
 import streamlit as st
 import datetime
-from supabase import create_client, Client
 import uuid
-from postgrest.exceptions import APIError
+from supabase import create_client, Client
 
-# --- Supabase Setup ---
 SUPABASE_URL = st.secrets["SUPABASE_URL"]
 SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Utility function to generate a unique task ID
 def get_event_key(day, hour):
     return f"{day}_{hour}"
 
-# --- Save task to Supabase ---
 def save_event_to_supabase(day, hour, start, end, notes):
-    try:
-        key = get_event_key(day, hour)
+    key = get_event_key(day, hour)
+    event_data = {
+        "id": str(uuid.uuid4()),
+        "key": key,
+        "day": day.strftime("%Y-%m-%d"),
+        "hour": hour,
+        "start": start,
+        "end": end,
+        "notes": notes,
+    }
+    existing = supabase.table("events").select("id").eq("key", key).execute()
+    if existing.data:
+        supabase.table("events").update(event_data).eq("key", key).execute()
+    else:
+        supabase.table("events").insert(event_data).execute()
 
-        if not start or not end:
-            st.warning("Start and End time cannot be empty.")
-            return
-
-        event_data = {
-            "id": str(uuid.uuid4()),
-            "key": key,
-            "day": day.strftime("%Y-%m-%d"),
-            "hour": int(hour),
-            "start": str(start),
-            "end": str(end),
-            "notes": notes or ""
-        }
-
-        existing = supabase.table("events").select("id").eq("key", key).execute()
-        if existing.data:
-            supabase.table("events").update(event_data).eq("key", key).execute()
-        else:
-            supabase.table("events").insert(event_data).execute()
-
-    except APIError as e:
-        st.error(f"Supabase insert failed: {e.message}")
-        st.json(event_data)
-
-# GPT Assistant Upsert Helper
-
-def save_event_to_supabase_gpt(event_data):
-    try:
-        key = event_data["key"]
-        existing = supabase.table("events").select("id").eq("key", key).execute()
-        if existing.data:
-            supabase.table("events").update(event_data).eq("key", key).execute()
-        else:
-            supabase.table("events").insert(event_data).execute()
-        return True
-    except Exception as e:
-        st.error(f"GPT Supabase Save Failed: {e}")
-        return False
-
-# --- Load events from Supabase ---
 def load_events():
     if "events" not in st.session_state:
         st.session_state.events = {}
@@ -115,3 +84,26 @@ def render_cell(day, hour):
 
     if st.markdown(content, unsafe_allow_html=True):
         render_task_popup(day, hour)
+
+def show_gpt_suggestions():
+    st.subheader("🤖 GPT Suggested Tasks")
+    suggestions = supabase.table("gpt_suggestions").select("*").execute()
+
+    if not suggestions.data:
+        st.info("No GPT suggestions yet. Run GPT Assistant above.")
+        return
+
+    for suggestion in suggestions.data:
+        with st.expander(f"{suggestion['day']} @ {suggestion['start']} – {suggestion['notes'][:30]}..."):
+            st.write(f"**Start:** {suggestion['start']}")
+            st.write(f"**End:** {suggestion['end']}")
+            st.write(f"**Notes:** {suggestion['notes']}")
+            if st.button("✅ Approve & Add to Calendar", key=f"approve_{suggestion['id']}"):
+                save_event_to_supabase(
+                    day=datetime.datetime.strptime(suggestion["day"], "%Y-%m-%d"),
+                    hour=int(suggestion["hour"]),
+                    start=suggestion["start"],
+                    end=suggestion["end"],
+                    notes=suggestion["notes"]
+                )
+                st.success("Added to calendar!")
