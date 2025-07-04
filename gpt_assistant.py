@@ -1,4 +1,4 @@
-# gpt_assistant.py — Calendar AI Summary Assistant (OpenAI v1-compatible)
+# gpt_assistant.py — GPT-powered Calendar Assistant (Refactored)
 
 import streamlit as st
 from supabase import create_client, Client
@@ -71,23 +71,15 @@ def generate_gpt_suggestions(events):
 
     try:
         suggestion_list = json.loads(response.choices[0].message.content)
+
+        if not isinstance(suggestion_list, list):
+            raise ValueError("GPT response is not a list.")
+
         for s in suggestion_list:
+            required_keys = {"day", "hour", "start", "end", "notes"}
+            if not required_keys.issubset(s):
+                raise ValueError(f"Missing keys in suggestion: {s}")
             save_gpt_suggestion(s["day"], s["hour"], s["start"], s["end"], s["notes"])
+
     except Exception as e:
         st.error(f"Failed to parse suggestions: {e}")
-
-# === Streamlit UI ===
-st.title("🧠 GPT Calendar Assistant")
-
-if st.button("📅 Analyze My Calendar & Suggest Improvements"):
-    events = load_all_events()
-    if events:
-        with st.spinner("Analyzing with GPT..."):
-            summary = summarize_calendar(events)
-            generate_gpt_suggestions(events)
-        st.markdown("---")
-        st.subheader("📋 Summary:")
-        st.markdown(summary)
-        st.success("Suggestions added below for approval!")
-    else:
-        st.info("No events found in your Supabase calendar.")
