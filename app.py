@@ -75,9 +75,10 @@ with col4:
 
 st.markdown("### " + (st.session_state.selected_date.strftime("%B %Y") if view_mode == "Month" else st.session_state.selected_date.strftime("Week of %B %d, %Y")))
 
-# Prevent invalid column layout by ensuring all widths are > 0
+# === LAYOUT WITH OPTIONAL CHAT ===
 if st.session_state.chat_open:
-    main_col, chat_col = st.columns([0.8, 0.2])
+    layout = st.columns([0.8, 0.2])
+    main_col, chat_col = layout[0], layout[1]
 else:
     main_col = st.container()
     chat_col = None
@@ -123,4 +124,8 @@ with main_col:
 
 if chat_col:
     with chat_col:
-        render_chat_pane()
+        try:
+            render_chat_pane()
+        except Exception as e:
+            st.error("Chat panel failed to load.")
+            st.text(str(e))
