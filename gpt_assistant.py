@@ -16,8 +16,12 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # === Load Events from Supabase ===
 def load_all_events():
-    response = supabase.table("events").select("*").order("day").execute()
-    return response.data
+    try:
+        response = supabase.table("events").select("*").order("day").execute()
+        return response.data
+    except Exception as e:
+        st.error(f"Failed to load events: {e}")
+        return []
 
 # === Format Calendar Events as Text ===
 def format_events(events):
@@ -48,15 +52,18 @@ def summarize_calendar(events):
 
 # === Save GPT Suggestions to Supabase ===
 def save_gpt_suggestion(day, hour, start, end, notes):
-    suggestion = {
-        "id": str(uuid.uuid4()),
-        "day": day,
-        "hour": hour,
-        "start": start,
-        "end": end,
-        "notes": notes
-    }
-    supabase.table("gpt_suggestions").insert(suggestion).execute()
+    try:
+        suggestion = {
+            "id": str(uuid.uuid4()),
+            "day": day,
+            "hour": hour,
+            "start": start,
+            "end": end,
+            "notes": notes
+        }
+        supabase.table("gpt_suggestions").insert(suggestion).execute()
+    except Exception as e:
+        st.error(f"Failed to save suggestion: {e}")
 
 # === Generate Example Suggestions with GPT ===
 def generate_gpt_suggestions(events):
@@ -86,4 +93,4 @@ def generate_gpt_suggestions(events):
             save_gpt_suggestion(s["day"], s["hour"], s["start"], s["end"], s["notes"])
 
     except Exception as e:
-        st.error(f"Failed to parse suggestions: {e}")
+        st.error(f"Failed to parse or insert suggestions: {e}")
