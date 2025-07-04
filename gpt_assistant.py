@@ -1,4 +1,4 @@
-# gpt_assistant.py — GPT-powered Calendar Assistant (Refactored) with Sliding Chat UI
+# gpt_assistant.py — GPT-powered Calendar Assistant (Refactored) with Sliding Chat UI 
 
 import streamlit as st
 from supabase import create_client, Client
@@ -85,39 +85,48 @@ def render_chat_pane():
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    with st.container():
-        chat_toggle = st.button("💬 Chat", key="toggle_chat")
-        if chat_toggle:
-            st.session_state.show_chat = not st.session_state.show_chat
+    st.markdown("### 💬 Assistant Chat")
+    chat_container = st.container()
+    with chat_container:
+        for entry in st.session_state.chat_history:
+            st.markdown(f"**You:** {entry['user']}")
+            st.markdown(f"**Assistant:** {entry['bot']}")
+            st.markdown("---")
 
-    if st.session_state.show_chat:
-        with st.container(border=True):
-            st.markdown("### 💬 Assistant Chat")
-            chat_container = st.container()
-            with chat_container:
-                for entry in st.session_state.chat_history:
-                    st.markdown(f"**You:** {entry['user']}")
-                    st.markdown(f"**Assistant:** {entry['bot']}")
-                    st.markdown("---")
+        col1, col2 = st.columns([5, 1])
+        with col1:
+            user_input = st.text_input("Message", key="chat_input")
+        with col2:
+            if st.button("Send", key="send_msg"):
+                if user_input.strip():
+                    st.session_state.chat_history.append({"user": user_input, "bot": "Thinking..."})
+                    with st.spinner("Assistant thinking..."):
+                        try:
+                            response = client.chat.completions.create(
+                                model="gpt-4",
+                                messages=[
+                                    {"role": "system", "content": "You are a helpful project assistant."},
+                                    {"role": "user", "content": user_input}
+                                ]
+                            )
+                            reply = response.choices[0].message.content
+                            st.session_state.chat_history[-1]["bot"] = reply
+                        except Exception as e:
+                            st.session_state.chat_history[-1]["bot"] = f"Error: {e}"
+                    st.rerun()
 
-                col1, col2 = st.columns([5, 1])
-                with col1:
-                    user_input = st.text_input("Message", key="chat_input")
-                with col2:
-                    if st.button("Send", key="send_msg"):
-                        if user_input.strip():
-                            st.session_state.chat_history.append({"user": user_input, "bot": "Thinking..."})
-                            with st.spinner("Assistant thinking..."):
-                                try:
-                                    response = client.chat.completions.create(
-                                        model="gpt-4",
-                                        messages=[
-                                            {"role": "system", "content": "You are a helpful project assistant."},
-                                            {"role": "user", "content": user_input}
-                                        ]
-                                    )
-                                    reply = response.choices[0].message.content
-                                    st.session_state.chat_history[-1]["bot"] = reply
-                                except Exception as e:
-                                    st.session_state.chat_history[-1]["bot"] = f"Error: {e}"
-                            st.rerun()
+    # === GPT API Connection Test ===
+    st.markdown("---")
+    if st.button("✅ Test GPT API Connection"):
+        try:
+            test_response = client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are a connection tester."},
+                    {"role": "user", "content": "Respond with the word 'connected' if the GPT API key is valid."}
+                ]
+            )
+            test_msg = test_response.choices[0].message.content
+            st.success(f"GPT API is working: {test_msg}")
+        except Exception as e:
+            st.error(f"❌ GPT API connection failed: {e}")
