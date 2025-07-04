@@ -14,7 +14,7 @@ if "selected_date" not in st.session_state:
 if "view_mode" not in st.session_state:
     st.session_state.view_mode = "Month"
 if "events" not in st.session_state:
-    st.session_state.events = {event['key']: event for event in load_all_events()}
+    st.session_state.events = {}
 
 # === SIDEBAR ===
 st.sidebar.header("📅 Calendar Controls")
@@ -85,15 +85,13 @@ else:
 # === GPT ASSISTANT ===
 st.write("---")
 if st.button("🤖 Run GPT Assistant"):
-    events = list(st.session_state.events.values())
-    if events:
-        with st.spinner("Thinking with GPT..."):
-            summary = summarize_calendar(events)
-            generate_gpt_suggestions(events)
-        st.subheader("📋 Summary")
-        st.markdown(summary)
-        st.success("Suggestions added below for approval.")
-    else:
-        st.info("No calendar events to analyze.")
+    with st.spinner("Thinking with GPT..."):
+        events = load_all_events()
+        st.session_state.events = {event['key']: event for event in events}
+        summary = summarize_calendar(events)
+        generate_gpt_suggestions(events)
+    st.subheader("📋 Summary")
+    st.markdown(summary)
+    st.success("Suggestions added below for approval.")
 
 show_gpt_suggestions()
