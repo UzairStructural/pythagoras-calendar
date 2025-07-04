@@ -3,7 +3,7 @@
 import streamlit as st
 import datetime
 from taskinteraction import render_cell, show_gpt_suggestions
-from gpt_assistant import summarize_calendar, generate_gpt_suggestions
+from gpt_assistant import summarize_calendar, generate_gpt_suggestions, load_all_events
 
 # === SETUP ===
 st.set_page_config(page_title="📆 Outlook-Style Calendar", layout="wide")
@@ -14,7 +14,7 @@ if "selected_date" not in st.session_state:
 if "view_mode" not in st.session_state:
     st.session_state.view_mode = "Month"
 if "events" not in st.session_state:
-    st.session_state.events = {}
+    st.session_state.events = {event['key']: event for event in load_all_events()}
 
 # === SIDEBAR ===
 st.sidebar.header("📅 Calendar Controls")
@@ -85,7 +85,7 @@ else:
 # === GPT ASSISTANT ===
 st.write("---")
 if st.button("🤖 Run GPT Assistant"):
-    events = st.session_state.events.values()
+    events = list(st.session_state.events.values())
     if events:
         with st.spinner("Thinking with GPT..."):
             summary = summarize_calendar(events)
