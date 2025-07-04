@@ -3,7 +3,6 @@
 import streamlit as st
 from supabase import create_client, Client
 from openai import OpenAI
-import os
 import datetime
 import uuid
 import json
@@ -53,10 +52,8 @@ def summarize_calendar(events):
 # === Save GPT Suggestions to Events Table ===
 def save_gpt_suggestion(day, hour, start, end, notes):
     try:
-        key = f"{day}_{hour}"
         suggestion = {
             "id": str(uuid.uuid4()),
-            "key": key,
             "day": day,
             "hour": hour,
             "start": start,
