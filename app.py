@@ -1,12 +1,12 @@
-# === Updated app.py for Outlook-style Calendar with Interactive Task Popup and Click-Based Draggable Coordinate Tracker ===
+# === Updated app.py for Outlook-style Calendar with GPT Assistant Integration ===
 
 import streamlit as st
 import datetime
 import uuid
 import json
 import os
-from openai import OpenAI
-from taskinteraction import render_cell
+from taskinteraction import render_cell, show_gpt_suggestions
+from gpt_assistant import run_gpt_summary
 
 # === SETUP ===
 st.set_page_config(page_title="📆 Outlook-Style Calendar", layout="wide")
@@ -171,7 +171,6 @@ with col3:
             st.session_state.selected_date += datetime.timedelta(weeks=1)
 
 # === CALENDAR BODY RENDERING ===
-
 if view_mode == "Month":
     st.markdown("#### 🗓️ Monthly View")
     start_date = st.session_state.selected_date.replace(day=1)
@@ -193,7 +192,6 @@ if view_mode == "Month":
             with cols[i]:
                 st.markdown(f"**{day.strftime('%a')} {day.day}**")
                 st.write("")
-
 else:
     st.markdown("#### 🗓️ Weekly View")
     start = st.session_state.selected_date - datetime.timedelta(days=st.session_state.selected_date.weekday())
@@ -214,3 +212,11 @@ else:
         for i in range(1, len(row)):
             with row[i]:
                 render_cell(days[i-1], h)
+
+# === GPT Assistant Button and Suggestions ===
+
+st.write("---")
+if st.button("🤖 Run GPT Assistant"):
+    run_gpt_summary()
+
+show_gpt_suggestions()
