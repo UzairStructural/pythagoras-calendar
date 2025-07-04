@@ -61,7 +61,8 @@ def save_gpt_suggestion(day, hour, start, end, notes):
             "hour": hour,
             "start": start,
             "end": end,
-            "notes": notes
+            "notes": notes,
+            "source": "gpt"
         }
         supabase.table("events").insert(suggestion).execute()
     except Exception as e:
