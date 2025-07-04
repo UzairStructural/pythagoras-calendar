@@ -50,7 +50,7 @@ def summarize_calendar(events):
         st.error(f"GPT summary failed: {e}")
         return ""
 
-# === Save GPT Suggestions to Supabase ===
+# === Save GPT Suggestions to Events Table ===
 def save_gpt_suggestion(day, hour, start, end, notes):
     try:
         suggestion = {
@@ -61,7 +61,7 @@ def save_gpt_suggestion(day, hour, start, end, notes):
             "end": end,
             "notes": notes
         }
-        supabase.table("gpt_suggestions").insert(suggestion).execute()
+        supabase.table("events").insert(suggestion).execute()
     except Exception as e:
         st.error(f"Failed to save suggestion: {e}")
 
