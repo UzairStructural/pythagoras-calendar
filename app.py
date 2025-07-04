@@ -95,4 +95,4 @@ if st.button("🤖 Analyze Calendar with GPT"):
 # === GPT Suggestions Display ===
 st.markdown("---")
 st.subheader("🤖 GPT Suggested Tasks")
-show_gpt_suggestions(source_filter=None)
+show_gpt_suggestions()
