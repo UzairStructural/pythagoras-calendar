@@ -131,8 +131,6 @@ st.markdown("""
     </script>
 """, unsafe_allow_html=True)
 
-# === REMAINING CODE ===
-
 # === SESSION STATE SETUP ===
 if "selected_date" not in st.session_state:
     st.session_state.selected_date = datetime.date.today()
@@ -169,6 +167,47 @@ with col3:
         else:
             st.session_state.selected_date += datetime.timedelta(weeks=1)
 
-# === CALENDAR BODY PLACEHOLDER ===
-st.markdown("---")
-st.markdown(f"*Calendar rendering for view: {view_mode} will appear here...*")
+# === CALENDAR BODY RENDERING ===
+
+if view_mode == "Month":
+    st.markdown("#### 🗓️ Monthly View")
+    start_date = st.session_state.selected_date.replace(day=1)
+    start_day = start_date.weekday()
+    total_days = (start_date.replace(month=start_date.month % 12 + 1, day=1) - datetime.timedelta(days=1)).day
+    grid = []
+    week = []
+    for day in range(1, total_days + 1):
+        curr = start_date.replace(day=day)
+        if (day == 1 and curr.weekday() != 0) or len(week) == 7:
+            grid.append(week)
+            week = []
+        week.append(curr)
+    grid.append(week)
+
+    for row in grid:
+        cols = st.columns(7)
+        for i, day in enumerate(row):
+            with cols[i]:
+                st.markdown(f"**{day.strftime('%a')} {day.day}**")
+                st.write("")
+
+else:
+    st.markdown("#### 🗓️ Weekly View")
+    start = st.session_state.selected_date - datetime.timedelta(days=st.session_state.selected_date.weekday())
+    days = [start + datetime.timedelta(days=i) for i in range(7)]
+    times = [f"{h % 12 or 12} {'AM' if h < 12 else 'PM'}" for h in range(24)]
+    st.write("---")
+    headers = st.columns([1] + [1 for _ in days])
+    with headers[0]:
+        st.write("Time")
+    for i, day in enumerate(days):
+        with headers[i+1]:
+            st.markdown(f"**{day.strftime('%a')} {day.day}**")
+
+    for hour in times:
+        row = st.columns([1] + [1 for _ in days])
+        with row[0]:
+            st.markdown(f"<div class='hour-cell'>{hour}</div>", unsafe_allow_html=True)
+        for i in range(1, len(row)):
+            with row[i]:
+                st.markdown(f"<div class='calendar-cell'></div>", unsafe_allow_html=True)
